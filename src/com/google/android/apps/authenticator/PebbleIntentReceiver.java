@@ -77,6 +77,8 @@ public class PebbleIntentReceiver extends BroadcastReceiver {
 
 						if (!mIsRefreshing) {
 							startStopRefreshNowPlaying(context);
+						} else {
+							restartAutoStopRefreshTimer(context);
 						}
 					}
 
@@ -170,7 +172,7 @@ public class PebbleIntentReceiver extends BroadcastReceiver {
 			mRefreshTimer.scheduleAtFixedRate(new TimerTask() {
 				@Override
 				public void run() {
-					Intent nowPlayingIntent = new Intent("com.android.music.metachanged");
+					Intent nowPlayingIntent = new Intent("com.getpebble.action.NOW_PLAYING");
 					nowPlayingIntent.setComponent(
 							new ComponentName(
 									"com.getpebble.android",
@@ -184,20 +186,24 @@ public class PebbleIntentReceiver extends BroadcastReceiver {
 			}, 0, TOTP_COUNTDOWN_REFRESH_PERIOD);
 			mIsRefreshing = true;
 
-			if (mAutoStopRefreshTimer != null) {
-				mAutoStopRefreshTimer.cancel();
-				mAutoStopRefreshTimer = null;
-			}
-			mAutoStopRefreshTimer = new Timer();
-			mAutoStopRefreshTimer.schedule(new TimerTask() {
-				@Override
-				public void run() {
-					if (mIsRefreshing) {
-						startStopRefreshNowPlaying(context);
-					}
-				}
-			}, (long) (Utilities.secondsToMillis(mTotpCounter.getTimeStep()) * 1.5));
+			restartAutoStopRefreshTimer(context);
 		}
+	}
+
+	private static void restartAutoStopRefreshTimer(final Context context) {
+		if (mAutoStopRefreshTimer != null) {
+			mAutoStopRefreshTimer.cancel();
+			mAutoStopRefreshTimer = null;
+		}
+		mAutoStopRefreshTimer = new Timer();
+		mAutoStopRefreshTimer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				if (mIsRefreshing) {
+					startStopRefreshNowPlaying(context);
+				}
+			}
+		}, (long) (Utilities.secondsToMillis(mTotpCounter.getTimeStep()) * 1.5));
 	}
 
 	private static class PinInfo {
