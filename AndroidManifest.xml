@@ -84,6 +84,12 @@
               android:theme="@android:style/Theme.Translucent.NoTitleBar"
               android:label="@string/timesync_sync_now_screen_title" />
 
+	<receiver android:name="com.google.android.apps.authenticator.PebbleIntentReceiver" android:exported="true">
+		<intent-filter>
+			<action android:name="android.intent.action.MEDIA_BUTTON" />
+		</intent-filter>
+	</receiver>
+
   </application>
 
 </manifest>
