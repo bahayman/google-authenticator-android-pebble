@@ -35,55 +35,49 @@ public class PebbleIntentReceiver extends BroadcastReceiver {
 	private static TotpClock mTotpClock;
 	private static long mTotpCountdownMillis;
 
-	private static final long TOTP_COUNTDOWN_REFRESH_PERIOD = 500;
+	private static final long TOTP_COUNTDOWN_REFRESH_PERIOD = 1000;
 	private static final String CURRENT_USER_INDEX_PREFERENCE_KEY = "pebble_current_user_index"; 
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
-			KeyEvent event = (KeyEvent) intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+		KeyEvent event = (KeyEvent) intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 
-			if (event == null) {
-				return;
-			}
+		if (event == null) {
+			return;
+		}
 
-			int keycode = event.getKeyCode();
-			int action = event.getAction();
+		int keycode = event.getKeyCode();
+		int action = event.getAction();
 
-			if (action == KeyEvent.ACTION_DOWN) {
-				if (keycode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
-					keycode == KeyEvent.KEYCODE_MEDIA_NEXT ||
-					keycode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
+		if (action == KeyEvent.ACTION_DOWN) {
+			if (keycode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
+				keycode == KeyEvent.KEYCODE_MEDIA_NEXT ||
+				keycode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
 
-					mCurrentUserIndex = PreferenceManager.getDefaultSharedPreferences(context)
-							.getInt(CURRENT_USER_INDEX_PREFERENCE_KEY, 0);
+				mCurrentUserIndex = PreferenceManager.getDefaultSharedPreferences(context)
+						.getInt(CURRENT_USER_INDEX_PREFERENCE_KEY, 0);
 
-					if (keycode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
-						startStopRefreshNowPlaying(context);
-					} else if (keycode == KeyEvent.KEYCODE_MEDIA_NEXT ||
-							   keycode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
-						int newIndex = mCurrentUserIndex +
-								(keycode == KeyEvent.KEYCODE_MEDIA_NEXT ? 1 : -1);
+				if (keycode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
+					startStopRefreshNowPlaying(context);
+				} else if (keycode == KeyEvent.KEYCODE_MEDIA_NEXT ||
+						   keycode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
+					int newIndex = mCurrentUserIndex +
+							(keycode == KeyEvent.KEYCODE_MEDIA_NEXT ? 1 : -1);
 
-						if (newIndex > (mUsers.length - 1)) {
-							newIndex = 0;
-						} else if (newIndex < 0) {
-							newIndex = mUsers.length - 1;
-						}
-						mCurrentUserIndex = newIndex;
-
-						PreferenceManager.getDefaultSharedPreferences(context).edit()
-								.putInt(CURRENT_USER_INDEX_PREFERENCE_KEY, mCurrentUserIndex).commit();
-
-						if (!mIsRefreshing) {
-							startStopRefreshNowPlaying(context);
-						} else {
-							restartAutoStopRefreshTimer(context);
-						}
+					if (newIndex > (mUsers.length - 1)) {
+						newIndex = 0;
+					} else if (newIndex < 0) {
+						newIndex = mUsers.length - 1;
 					}
+					mCurrentUserIndex = newIndex;
 
-					if (isOrderedBroadcast()) {
-						abortBroadcast();
+					PreferenceManager.getDefaultSharedPreferences(context).edit()
+							.putInt(CURRENT_USER_INDEX_PREFERENCE_KEY, mCurrentUserIndex).commit();
+
+					if (!mIsRefreshing) {
+						startStopRefreshNowPlaying(context);
+					} else {
+						restartAutoStopRefreshTimer(context);
 					}
 				}
 			}
@@ -172,15 +166,12 @@ public class PebbleIntentReceiver extends BroadcastReceiver {
 			mRefreshTimer.scheduleAtFixedRate(new TimerTask() {
 				@Override
 				public void run() {
-					Intent nowPlayingIntent = new Intent("com.getpebble.action.NOW_PLAYING");
-					nowPlayingIntent.setComponent(
-							new ComponentName(
-									"com.getpebble.android",
-									"com.getpebble.android.receivers.MusicNowPlayingReceiver"));
-					nowPlayingIntent.putExtra("album", "Authenticator: "
+					Intent nowPlayingIntent = new Intent("me.baruch.pebblemitm.UPDATE_DISPLAY");
+					nowPlayingIntent.setPackage("me.baruch.pebblemitm");
+					nowPlayingIntent.putExtra("line3", "Authenticator: "
 							+ Utilities.millisToSeconds(mTotpCountdownMillis));
-					nowPlayingIntent.putExtra("artist", mUsers[mCurrentUserIndex].user);
-					nowPlayingIntent.putExtra("track", mUsers[mCurrentUserIndex].pin);
+					nowPlayingIntent.putExtra("line1", mUsers[mCurrentUserIndex].user);
+					nowPlayingIntent.putExtra("line2", mUsers[mCurrentUserIndex].pin);
 					context.sendBroadcast(nowPlayingIntent);
 				}
 			}, 0, TOTP_COUNTDOWN_REFRESH_PERIOD);

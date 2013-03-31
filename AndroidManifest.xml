@@ -86,7 +86,7 @@
 
 	<receiver android:name="com.google.android.apps.authenticator.PebbleIntentReceiver" android:exported="true">
 		<intent-filter>
-			<action android:name="android.intent.action.MEDIA_BUTTON" />
+			<action android:name="me.baruch.pebblemitm.RECEIVE_INTERACTION" />
 		</intent-filter>
 	</receiver>
 
